@@ -5,6 +5,7 @@ module com.kneelawk.puzzlemaker {
     requires com.google.common;
     requires org.apache.commons.io;
     requires org.apache.commons.configuration2;
+    requires commons.csv;
     requires pdfbox;
     requires graphics2d;
 }

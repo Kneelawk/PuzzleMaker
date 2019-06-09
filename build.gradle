@@ -18,6 +18,7 @@ dependencies {
     implementation 'com.google.guava:guava:27.1-jre'
     implementation 'commons-io:commons-io:2.6'
     implementation 'org.apache.commons:commons-configuration2:2.4'
+    implementation 'org.apache.commons:commons-csv:1.7'
     implementation 'org.apache.pdfbox:pdfbox:2.0.15'
     implementation 'de.rototor.pdfbox:graphics2d:0.23'
 }

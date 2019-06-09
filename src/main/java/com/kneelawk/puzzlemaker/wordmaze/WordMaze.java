@@ -17,17 +17,22 @@ public class WordMaze {
 	private int height;
 	private int boxWidth;
 	private int boxHeight;
+	private int startPosition;
+	private int endPosition;
 	private boolean[][] verticals;
 	private boolean[][] horizontals;
 	private char[][] letters;
 	private char extraLetter;
 
-	public WordMaze(Random random, int width, int height, int boxWidth, int boxHeight) {
+	public WordMaze(Random random, int width, int height, int boxWidth, int boxHeight, int startPosition,
+					int endPosition) {
 		this.random = random;
 		this.width = width;
 		this.height = height;
 		this.boxWidth = boxWidth;
 		this.boxHeight = boxHeight;
+		this.startPosition = startPosition;
+		this.endPosition = endPosition;
 		verticals = new boolean[height][width + 1];
 		horizontals = new boolean[height + 1][width];
 		letters = new char[height][width];
@@ -158,7 +163,7 @@ public class WordMaze {
 		}
 	}
 
-	public void generateMaze(int startPosition, int endPosition, int barrierRemovals) {
+	public void generateMaze(int barrierRemovals) {
 		fillBarriers();
 		clearBarriersForMaze();
 		setPerimeter(startPosition, false);
@@ -228,7 +233,7 @@ public class WordMaze {
 		}
 	}
 
-	public void addWordString(int startPosition, int endPosition, String wordString) throws UnsolvableException {
+	public void pathWordString(String wordString) throws UnsolvableException {
 		List<Vec2i> path = solve(getPerimeterVec(startPosition), getPerimeterVec(endPosition), 0, wordString,
 				ImmutableMap.of());
 		if (path == null) {
@@ -245,7 +250,7 @@ public class WordMaze {
 		}
 	}
 
-	public void draw(Graphics2D graphics2D, int endPosition) {
+	public void draw(Graphics2D graphics2D) {
 		graphics2D.setStroke(new BasicStroke(2));
 		graphics2D.setColor(Color.BLACK);
 		for (int y = 0; y < height; y++) {
