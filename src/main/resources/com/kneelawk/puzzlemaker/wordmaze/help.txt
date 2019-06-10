@@ -1,6 +1,6 @@
 WordMazeGenerator Usage:
-WordMazeGenerator -o <output-file> -i <input-file> -w <maze-width> -h <maze-height> -s <start-position>
-                  -e <end-position> [-a <alphabet>]
+WordMazeGenerator -o <output-file> -O <answer-output-file> -i <input-file> -w <maze-width> -h <maze-height>
+                  -s <start-position> -e <end-position> [-a <alphabet>] -b <barrier-removals>
 
 Options:
     -a, --alphabet=<alphabet>           The set of characters to fill the unused parts of the maze with.
@@ -21,6 +21,9 @@ Options:
     -i, --input=<input-file>            CSV file to read prompts and word from.
 
     -o, --output=<output-file>          File to write the resulting maze pdf to.
+
+    -O, --output-answer<answer-output-file>
+                                        File to write the answer maze pdf to.
 
     -s, --start=<start-position>        The offset around the perimeter from the top right corner to have the start of
                                         the maze at.

@@ -36,6 +36,7 @@ public class WordMazeGeneratorArguments {
 	}
 
 	private File outputPDF;
+	private File answerPDF;
 	private File inputCSV;
 	private int mazeWidth;
 	private int mazeHeight;
@@ -48,6 +49,10 @@ public class WordMazeGeneratorArguments {
 
 	public File getOutputPDF() {
 		return outputPDF;
+	}
+
+	public File getAnswerPDF() {
+		return answerPDF;
 	}
 
 	public File getInputCSV() {
@@ -101,6 +106,16 @@ public class WordMazeGeneratorArguments {
 		outputPDF = new File(parser.outputPDF).getAbsoluteFile();
 		if (!outputPDF.getParentFile().exists()) {
 			System.err.println("Output directory: \"" + outputPDF.getParent() + "\" does not exist.");
+			printHelpAndExit(-1);
+		}
+
+		if (parser.answerPDF == null) {
+			System.err.println("Missing --output-answer option");
+			printHelpAndExit(-1);
+		}
+		answerPDF = new File(parser.answerPDF).getAbsoluteFile();
+		if (!answerPDF.getParentFile().exists()) {
+			System.err.println("Answer output directory: \"" + answerPDF.getParent() + "\" does not exist.");
 			printHelpAndExit(-1);
 		}
 
@@ -245,6 +260,7 @@ public class WordMazeGeneratorArguments {
 
 	private class Parser {
 		String outputPDF;
+		String answerPDF;
 		String inputCSV;
 		String mazeWidth;
 		String mazeHeight;
@@ -257,13 +273,17 @@ public class WordMazeGeneratorArguments {
 		boolean error;
 
 		void parse(String[] args) {
-			boolean parsingOutputPDF = false, parsingInputCSV = false, parsingMazeWidth = false, parsingMazeHeight =
-					false, parsingBoxWidth = false, parsingBoxHeight = false, parsingStartPostioin = false,
-					parsingEndPosition = false, parsingAlphabet = false, parsingBarrierRemovals = false;
+			boolean parsingOutputPDF = false, parsingAnswerPDF = false, parsingInputCSV = false, parsingMazeWidth =
+					false, parsingMazeHeight = false, parsingBoxWidth = false, parsingBoxHeight = false,
+					parsingStartPostioin = false, parsingEndPosition = false, parsingAlphabet = false,
+					parsingBarrierRemovals = false;
 			for (String arg : args) {
 				if (parsingOutputPDF) {
 					outputPDF = arg;
 					parsingOutputPDF = false;
+				} else if (parsingAnswerPDF) {
+					answerPDF = arg;
+					parsingAnswerPDF = false;
 				} else if (parsingInputCSV) {
 					inputCSV = arg;
 					parsingInputCSV = false;
@@ -310,6 +330,13 @@ public class WordMazeGeneratorArguments {
 										parsingOutputPDF = true;
 									} else {
 										outputPDF = argValue;
+									}
+									break;
+								case "--output-answer":
+									if (argValue == null) {
+										parsingAnswerPDF = true;
+									} else {
+										answerPDF = argValue;
 									}
 									break;
 								case "--input":
@@ -374,9 +401,11 @@ public class WordMazeGeneratorArguments {
 									} else {
 										barrierRemovals = argValue;
 									}
+									break;
 								default:
 									System.err.println("Unknown option: '" + arg + '\'');
 									error = true;
+									break;
 							}
 						} else {
 							arg = arg.substring(1);
@@ -389,6 +418,14 @@ public class WordMazeGeneratorArguments {
 											parsingOutputPDF = true;
 										} else {
 											outputPDF = arg;
+											arg = "";
+										}
+										break;
+									case 'O':
+										if (arg.isEmpty()) {
+											parsingAnswerPDF = true;
+										} else {
+											answerPDF = arg;
 											arg = "";
 										}
 										break;
@@ -449,7 +486,7 @@ public class WordMazeGeneratorArguments {
 										}
 										break;
 									default:
-										System.err.println("Unknown short option: '" + option + '\'');
+										System.err.println("Unknown short option: '-" + option + '\'');
 										error = true;
 										break;
 								}

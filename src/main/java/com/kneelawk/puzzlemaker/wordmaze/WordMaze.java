@@ -250,6 +250,16 @@ public class WordMaze {
 		}
 	}
 
+	public void fillRandomCharacters(String alphabet) {
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				if (letters[y][x] == 0) {
+					letters[y][x] = alphabet.charAt(random.nextInt(alphabet.length()));
+				}
+			}
+		}
+	}
+
 	public void draw(Graphics2D graphics2D) {
 		graphics2D.setStroke(new BasicStroke(2));
 		graphics2D.setColor(Color.BLACK);
@@ -278,7 +288,6 @@ public class WordMaze {
 			}
 		}
 		if (extraLetter != 0) {
-			System.out.println("Writing extra letter '" + extraLetter + "'");
 			Vec2i loc = getPerimeterVec(endPosition).add(getPerimeterSide(endPosition).getVec());
 			graphics2D.drawChars(new char[]{extraLetter}, 0, 1,
 					loc.x * boxWidth + (boxWidth - metrics.charWidth(extraLetter)) / 2,

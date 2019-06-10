@@ -25,7 +25,7 @@ import java.util.Random;
 public class WordMazeGenerator {
 	private static final String FONT_RESOURCE = "NotoMono-Regular.ttf";
 
-	public static void main(String[] args) throws UnsolvableException {
+	public static void main(String[] args) {
 		WordMazeGeneratorArguments arguments = new WordMazeGeneratorArguments();
 		arguments.parseArguments(args);
 
@@ -68,7 +68,13 @@ public class WordMazeGenerator {
 			System.exit(2);
 		}
 
-		System.out.println("Writing pdf...");
+		System.out.println("Writing answer pdf...");
+		writePDF(maze, questions, arguments.getAnswerPDF(), mazeWidth, mazeHeight, boxWidth, boxHeight);
+
+		System.out.println("Filling the maze with extra letters...");
+		maze.fillRandomCharacters(arguments.getAlphabet());
+
+		System.out.println("Writing resulting pdf...");
 		writePDF(maze, questions, arguments.getOutputPDF(), mazeWidth, mazeHeight, boxWidth, boxHeight);
 	}
 
@@ -164,10 +170,8 @@ public class WordMazeGenerator {
 			throws IOException {
 		stream.setFont(font, fontSize);
 		float textHeight = font.getFontDescriptor().getFontBoundingBox().getHeight() / 1000f * fontSize;
-		System.out.println("Text height: " + textHeight);
 		float lineOffset = textHeight * 1.15f;
 
-		System.out.println("Writing " + lines.size() + " lines...");
 		stream.newLineAtOffset(x, y - textHeight);
 		stream.setLeading(lineOffset);
 		stream.showText(lines.get(0));
