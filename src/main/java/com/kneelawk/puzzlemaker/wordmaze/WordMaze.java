@@ -8,6 +8,7 @@ import java.awt.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class WordMaze {
 	private static final float MAZE_CHANCE_TO_SPLIT = 0.2f;
@@ -233,20 +234,136 @@ public class WordMaze {
 		}
 	}
 
-	public void pathWordString(String wordString) throws UnsolvableException {
+	public List<List<Vec2i>> pathWordString(List<String> words) throws UnsolvableException {
+		String wordString = words.stream().reduce("", String::concat);
+
 		List<Vec2i> path = solve(getPerimeterVec(startPosition), getPerimeterVec(endPosition), 0, wordString,
 				ImmutableMap.of());
+
 		if (path == null) {
 			throw new UnsolvableException(
 					"This maze cannot be solved with a path of length: " + wordString.length());
 		}
-		System.out.println("String length: " + wordString.length() + ", path length: " + path.size());
-		int pathSize = path.size(), i;
-		for (i = 0; i < pathSize; i++) {
-			setCharacter(path.get(i), wordString.charAt(i));
+
+		int i = 0, pathSize = path.size();
+		List<List<Vec2i>> alternateLocationsList = Lists.newArrayList();
+		Vec2i lastVec = null;
+
+		outerFor:
+		for (String word : words) {
+			List<Vec2i> alternateLocations = Lists.newArrayList();
+			Vec2i loc = path.get(i);
+			if (lastVec == null) {
+				alternateLocations.add(loc);
+			} else {
+				List<BoxSide> availableDirections = getAvailableDirections(lastVec);
+				for (BoxSide direction : availableDirections) {
+					alternateLocations.add(lastVec.add(direction.getVec()));
+				}
+			}
+			alternateLocationsList.add(alternateLocations);
+			for (char c : word.toCharArray()) {
+				if (i >= pathSize) {
+					break outerFor;
+				}
+				loc = path.get(i);
+				setCharacter(loc, c);
+				i++;
+				lastVec = loc;
+			}
 		}
+
 		if (i < wordString.length()) {
 			extraLetter = wordString.charAt(wordString.length() - 1);
+		}
+
+		return alternateLocationsList;
+	}
+
+	public List<Vec2i> findExactLetterPath(Vec2i start, int index, String wordString,
+										   Map<Vec2i, Character> letterMap) {
+		if (index >= wordString.length() - 1) {
+			return ImmutableList.of(start);
+		} else {
+			Map<Vec2i, Character> newLetters = letterMap;
+			if (!letterMap.containsKey(start)) {
+				newLetters = ImmutableMap.<Vec2i, Character>builder().putAll(letterMap)
+						.put(start, wordString.charAt(index)).build();
+			}
+			List<BoxSide> availableDirections = getAvailableDirections(start);
+			while (!availableDirections.isEmpty()) {
+				BoxSide direction = availableDirections.remove(random.nextInt(availableDirections.size()));
+				Vec2i child = start.add(direction.getVec());
+				char childChar = wordString.charAt(index + 1);
+				if ((!letterMap.containsKey(child) ||
+						(letterMap.containsKey(child) && letterMap.get(child) == childChar)) &&
+						(letters[child.y][child.x] == 0 || letters[child.y][child.x] == childChar)) {
+					List<Vec2i> path = findExactLetterPath(child, index + 1, wordString, newLetters);
+					if (path != null) {
+						return ImmutableList.<Vec2i>builder().add(start).addAll(path).build();
+					}
+				}
+			}
+			return null;
+		}
+	}
+
+	public List<Vec2i> findLetterPath(Vec2i start, int index, String wordString, Map<Vec2i, Character> letterMap) {
+		if (index >= wordString.length() - 1) {
+			return ImmutableList.of(start);
+		} else {
+			Map<Vec2i, Character> newLetters = letterMap;
+			if (!letterMap.containsKey(start)) {
+				newLetters = ImmutableMap.<Vec2i, Character>builder().putAll(letterMap)
+						.put(start, wordString.charAt(index)).build();
+			}
+			List<BoxSide> availableDirections = getAvailableDirections(start);
+			while (!availableDirections.isEmpty()) {
+				BoxSide direction = availableDirections.remove(random.nextInt(availableDirections.size()));
+				Vec2i child = start.add(direction.getVec());
+				char childChar = wordString.charAt(index + 1);
+				if ((!letterMap.containsKey(child) ||
+						(letterMap.containsKey(child) && letterMap.get(child) == childChar)) &&
+						(letters[child.y][child.x] == 0 || letters[child.y][child.x] == childChar)) {
+					List<Vec2i> path = findLetterPath(child, index + 1, wordString, newLetters);
+					return ImmutableList.<Vec2i>builder().add(start).addAll(path).build();
+				}
+			}
+			return ImmutableList.of(start);
+		}
+	}
+
+	public void drawAlternateAnswer(Vec2i start, String answer) {
+		List<Vec2i> path = findExactLetterPath(start, 0, answer, ImmutableMap.of());
+		if (path == null) {
+			path = findLetterPath(start, 0, answer, ImmutableMap.of());
+		}
+
+		int pathSize = path.size();
+		for (int i = 0; i < pathSize; i++) {
+			Vec2i loc = path.get(i);
+			letters[loc.y][loc.x] = answer.charAt(i);
+		}
+	}
+
+	public void addAlternateAnswers(List<List<Vec2i>> alternateLocations, List<List<String>> alternateAnswers) {
+		if (alternateAnswers.size() != alternateLocations.size()) {
+			throw new IllegalArgumentException(
+					"the number of location alternate splits does not equal the number of answer alternate splits");
+		}
+		int alternateSize = alternateAnswers.size();
+		for (int i = 0; i < alternateSize; i++) {
+			List<String> answers = alternateAnswers.get(i);
+			List<Vec2i> locations = alternateLocations.get(i);
+			for (String answer : answers) {
+				char firstChar = answer.charAt(0);
+				List<Vec2i> availableLocations = locations.stream()
+						.filter(vec -> letters[vec.y][vec.x] == 0 || letters[vec.y][vec.x] == firstChar)
+						.collect(Collectors.toList());
+				if (!availableLocations.isEmpty()) {
+					drawAlternateAnswer(availableLocations.get(random.nextInt(availableLocations.size())), answer);
+				}
+			}
 		}
 	}
 

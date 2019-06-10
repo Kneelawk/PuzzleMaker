@@ -1,5 +1,6 @@
 package com.kneelawk.puzzlemaker.wordmaze;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import de.rototor.pdfbox.graphics2d.PdfBoxGraphics2D;
 import de.rototor.pdfbox.graphics2d.PdfBoxGraphics2DFontTextDrawer;
@@ -21,6 +22,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class WordMazeGenerator {
 	private static final String FONT_RESOURCE = "NotoMono-Regular.ttf";
@@ -36,13 +38,24 @@ public class WordMazeGenerator {
 		int boxHeight = arguments.getBoxHeight();
 
 		// load csv
-		StringBuilder wordString = new StringBuilder();
+		List<String> wordString = Lists.newArrayList();
+		int wordStringLength = 0;
 		List<String> questions = Lists.newArrayList();
+		List<List<String>> alternateAnswers = Lists.newArrayList();
 		try {
 			CSVParser questionCSV = CSVFormat.RFC4180.parse(new FileReader(arguments.getInputCSV()));
 			for (CSVRecord questionRecord : questionCSV) {
 				questions.add(questionRecord.get(0));
-				wordString.append(questionRecord.get(1).trim().toUpperCase());
+				String word = CaseUtils.toUpperCase(questionRecord.get(1).trim());
+				wordString.add(word);
+				wordStringLength += word.length();
+				if (questionRecord.size() > 2 && !questionRecord.get(2).isBlank()) {
+					alternateAnswers.add(Lists.newArrayList(questionRecord.get(2).split(":")).stream()
+							.filter(str -> !str.isBlank()).map(str -> CaseUtils.toUpperCase(str.trim()))
+							.collect(Collectors.toList()));
+				} else {
+					alternateAnswers.add(ImmutableList.of());
+				}
 			}
 		} catch (IOException e) {
 			System.err.println("Unable to load CSV file: " + arguments.getInputCSV());
@@ -55,11 +68,12 @@ public class WordMazeGenerator {
 		maze.generateMaze(arguments.getBarrierRemovals());
 
 		System.out.println("Solving maze...");
+		List<List<Vec2i>> alternateLocations = null;
 		try {
-			maze.pathWordString(wordString.toString());
+			alternateLocations = maze.pathWordString(wordString);
 		} catch (UnsolvableException e) {
 			System.err.println(
-					"Unable to solve the randomly generated maze for a path of length: " + wordString.length());
+					"Unable to solve the randomly generated maze for a path of length: " + wordStringLength);
 			System.err.println(
 					"Perhaps there is an issue with the maze-generator settings (maze too large for word-string path, maze too small for word-string path, too few alternate removed barriers).");
 			System.err.println(
@@ -70,6 +84,9 @@ public class WordMazeGenerator {
 
 		System.out.println("Writing answer pdf...");
 		writePDF(maze, questions, arguments.getAnswerPDF(), mazeWidth, mazeHeight, boxWidth, boxHeight);
+
+		System.out.println("Adding alternate answers...");
+		maze.addAlternateAnswers(alternateLocations, alternateAnswers);
 
 		System.out.println("Filling the maze with extra letters...");
 		maze.fillRandomCharacters(arguments.getAlphabet());
